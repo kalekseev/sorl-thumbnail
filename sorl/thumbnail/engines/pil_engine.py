@@ -1,8 +1,13 @@
 from __future__ import unicode_literals, division
 
+import logging
 import math
 from sorl.thumbnail.engines.base import EngineBase
-from sorl.thumbnail.compat import BufferIO
+from sorl.thumbnail.compat import BufferIO, text_type
+
+
+logger = logging.getLogger(__name__)
+
 
 try:
     from PIL import Image, ImageFile, ImageDraw, ImageFilter
@@ -100,8 +105,12 @@ class Engine(EngineBase):
                 newimage = image.convert('RGBA')
                 transparency = image.info.get('transparency')
                 if transparency is not None:
-                    mask = Image.new('L', image.size, color=transparency)
-                    newimage.putalpha(mask)
+                    try:
+                        mask = Image.new('L', image.size, color=transparency)
+                    except ValueError as e:
+                        logger.info(text_type('Skip setting transparency, reason: %s'), e)
+                    else:
+                        newimage.putalpha(mask)
                 return newimage
             return image.convert('RGB')
         if colorspace == 'GRAY':
